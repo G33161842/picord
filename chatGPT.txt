@@ -1,0 +1,13 @@
+我現在想要透過手機網頁控制ESP8266來發射紅外線訊號 開啟或關閉電風扇 該怎麼做
+電風扇的開關紅外線訊號
+開(強中弱)
+Protocol  : SYMPHONY
+Code      : 0xD82 (12 Bits)
+關
+Protocol  : SYMPHONY
+Code      : 0xD81 (12 Bits)
+
+我現在想要透過手機網頁控制ESP8266來發射紅外線訊號 開啟或關閉暖氣設備 該怎麼做
+暖氣機的開關紅外線訊號
+Protocol  : NEC
+Code      : 0xFF02FD (32 Bits)
