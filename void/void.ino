@@ -8,16 +8,10 @@
 const char* ssid[] = {"daniu0807", "picord"};
 const char* password[] = {"33161842", "000010000"};
 const int wifiNetworks = 2;
-/*
-const char* ssid[] = {"amy","daniu0807", "picord"};
-const char* password[] = {"0918213248","33161842", "000010000"};
-*/
-
-//const char* serverUrl = "https://3.1.140.221:10011/upload.php";
 const char* serverUrl = "http://redweb.magicboy.xyz/upload.php";
-const int irPin1 = D8;
+const int irPin1 = D6;
 const int irPin2 = D5;
-const int irPin3 = D6;
+const int irPin3 = D8;
 IRsend irsend1(irPin1);
 IRsend irsend2(irPin2);
 IRsend irsend3(irPin3);
@@ -34,6 +28,35 @@ const float thresholdTemphigh = 28.0;
 const float thresholdTemplow = 25.0;
 
 AsyncWebServer server(80);
+void connectWiFi() {
+  while (WiFi.status() != WL_CONNECTED) {
+    for (int i = 0; i < wifiNetworks; i++) {
+      Serial.print("嘗試連接 WiFi: ");
+      Serial.println(ssid[i]);
+      WiFi.begin(ssid[i], password[i]);
+
+      int retries = 0;
+      while (WiFi.status() != WL_CONNECTED && retries < 10) {
+        delay(1000);
+        Serial.print(".");
+        retries++;
+      }
+
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\n連接成功!");
+        Serial.print("已連接到 WiFi: ");
+        Serial.println(ssid[i]);
+        Serial.print("IP 地址: ");
+        Serial.println(WiFi.localIP());
+        return; // 成功連接後退出函數
+      } else {
+        Serial.println("\n連接失敗，嘗試下一個 WiFi...");
+      }
+    }
+    Serial.println("無法連接到任何 WiFi，5 秒後重新嘗試...");
+    delay(5000); // 等待後重試
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -41,41 +64,7 @@ void setup() {
   irsend2.begin();
   irsend3.begin();
   dht.begin();
-
-  bool connected = false;
-
-  for (int i = 0; i < wifiNetworks; i++) {
-    Serial.print("try to connect wifi: ");
-    Serial.println(ssid[i]);
-    //WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  // 设置静态IP
-    WiFi.begin(ssid[i], password[i]);
-    int retries = 0;
-    while (WiFi.status() != WL_CONNECTED && retries < 10) {
-      delay(1000);
-      Serial.print(".");
-      retries++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("");
-      Serial.print("Connected to ");
-      Serial.println(ssid[i]);
-      connected = true;
-      Serial.print("IP address: ");
-      Serial.println(WiFi.localIP());  // 顯示IP
-      break;  // 成功連接後退出循環
-    } else {
-      Serial.println("");
-      Serial.println("Connect fail, try next");
-      delay(1000);
-    }
-  }
-
-  if (!connected) {
-    Serial.println("Can't connect any WiFi!");
-    return;
-  }
-
+  connectWiFi(); // 呼叫連接 WiFi 函數
   // Web server setup
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     String html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
@@ -123,6 +112,7 @@ void setup() {
     irsend1.sendSymphony(0xD82, 12);
     fan1 = 1;
     request->send(200, "text/plain", "風扇1狀態：開啟");
+    Serial.println("風扇1開啟");
   });
   server.on("/off1", HTTP_GET, [](AsyncWebServerRequest *request) {
     autoMode = 0;
@@ -173,6 +163,11 @@ void setup() {
 }
 
 void loop() {
+  // 檢查 WiFi 連線狀態，若斷開則重新連接
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi 斷開，嘗試重新連接...");
+    connectWiFi(); // 呼叫重新連接函數
+  }
   static unsigned long lastMillis = 0;
   if (millis() - lastMillis >= 10000) {  // Send data every 10 seconds
     lastMillis = millis();

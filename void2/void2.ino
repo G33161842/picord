@@ -1,6 +1,3 @@
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <ESPAsyncWebServer.h>
@@ -8,17 +5,10 @@
 #include <IRsend.h>
 #include <DHT.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-
 const char* ssid[] = {"daniu0807", "picord"};
 const char* password[] = {"33161842", "000010000"};
 const int wifiNetworks = 2;
-
-//const char* serverUrl = "https://3.1.140.221:10011/upload.php";
 const char* serverUrl = "http://redweb.magicboy.xyz/upload.php";
-
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 const int irPin1 = D8;
 const int irPin2 = D5;
 const int irPin3 = D6;
@@ -44,78 +34,39 @@ void setup() {
   irsend1.begin();
   irsend2.begin();
   irsend3.begin();
-  //Wire.begin(D8, D1);
   dht.begin();
 
   bool connected = false;
 
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for (;;);
-  }
-  display.clearDisplay();
-  display.display();
-
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("Connecting to Wi-Fi...");
-  display.display();
-
   for (int i = 0; i < wifiNetworks; i++) {
     Serial.print("try to connect wifi: ");
     Serial.println(ssid[i]);
-
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.print("Connecting to: ");
-    display.println(ssid[i]);
-    display.display();
-
+    //WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);  // 设置静态IP
     WiFi.begin(ssid[i], password[i]);
-
     int retries = 0;
     while (WiFi.status() != WL_CONNECTED && retries < 10) {
       delay(1000);
       Serial.print(".");
       retries++;
-      display.print(".");
-      display.display();
     }
 
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("");
       Serial.print("Connected to ");
       Serial.println(ssid[i]);
-
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.println("WiFi Connected!");
-      display.setCursor(0, 16);
-      display.print("SSID: ");
-      display.println(ssid[i]);
-      display.display();
-
       connected = true;
+      Serial.print("IP address: ");
+      Serial.println(WiFi.localIP());  // 顯示IP
       break;  // 成功連接後退出循環
     } else {
       Serial.println("");
       Serial.println("Connect fail, try next");
-
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.println("Connect Failed!");
-      display.display();
       delay(1000);
     }
   }
 
   if (!connected) {
     Serial.println("Can't connect any WiFi!");
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("WiFi Failed!");
-    display.display();
     return;
   }
 
@@ -235,24 +186,6 @@ void loop() {
         Serial.println("Can't read DHT data");
         return;
       }
-
-      // 顯示在 OLED 上
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-
-      display.setCursor(0, 0);
-      display.print("Temp: ");
-      display.print(temp);
-      display.println(" C");
-
-      display.setCursor(0, 16);
-      display.print("Humidity: ");
-      display.print(humidity);
-      display.println(" %");
-
-      display.display();
-
       // 發送數據到伺服器
       String postData = "temperature=" + String(temp) + "&humidity=" + String(humidity);
       int httpResponseCode = http.POST(postData);

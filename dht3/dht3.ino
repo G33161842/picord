@@ -1,51 +1,24 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#include <ESPAsyncWebServer.h>
 #include <DHT.h>
 
-const int DHTPIN = D7;
 #define DHTTYPE DHT11
+const int DHTPIN = D7;
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* ssid[] = {"daniu0807", "picord"};
-const char* password[] = {"33161842", "000010000"};
-const int wifiNetworks = 2;
-const char* server = "http://redweb.magicboy.xyz";  // PHP 伺服器 IP
+const char* ssid = "picord";
+const char* password = "000010000";
+const char* server = "redweb.magicboy.xyz";
 
 void setup() {
   Serial.begin(115200);
+  WiFi.begin(ssid, password);
   dht.begin();
 
-  bool connected = false;
-
-  for (int i = 0; i < wifiNetworks; i++) {
-    Serial.print("try to connect wifi: ");
-    Serial.println(ssid[i]);
-    WiFi.begin(ssid[i], password[i]);
-    int retries = 0;
-    while (WiFi.status() != WL_CONNECTED && retries < 10) {
-      delay(1000);
-      Serial.print(".");
-      retries++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("");
-      Serial.print("Connected to ");
-      Serial.println(ssid[i]);
-      connected = true;
-      break;  // 成功連接後退出循環
-    } else {
-      Serial.println("");
-      Serial.println("Connect fail, try next");
-      delay(1000);
-    }
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
-
-  if (!connected) {
-    Serial.println("Can't connect any WiFi!");
-    return;
-  }
+  Serial.println("\nWiFi connected!");
 }
 
 void loop() {
@@ -56,21 +29,28 @@ void loop() {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
-  HTTPClient http;
+
   WiFiClient client;
-  String url = "http://redweb.magicboy.xyz/dht_update.php?id=3&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  String url = "/dht_update.php?id=3&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  https://redweb.magicboy.xyz/dht_update.php?action=update&id=3&temperature=25&humidity=25
 
-  http.begin(client, url);
-  int httpCode = http.GET();
-  if (httpCode > 0) {
-    Serial.printf("HTTP GET code: %d\n", httpCode);
-    String payload = http.getString();
-    Serial.println(payload);
-  } else {
-    Serial.println("HTTP request failed!");
+  Serial.print("Requesting URL: ");
+  Serial.println(url);
+
+  if (client.connect(server, 80)) {
+    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                 "Host: " + server + "\r\n" +
+                 "Connection: close\r\n\r\n");
+    delay(500);
+
+  while (client.available()) {
+    String line = client.readStringUntil('\n');
+    Serial.println(line);
   }
-  http.end();
-
+    client.stop();
+  } else {
+    Serial.println("Connection failed!");
+  }
 
   delay(60000);  // 每分鐘傳送一次數據
 }
