@@ -1,13 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <DHT.h>
 
-#define DHTPIN 2
-#define DHTTYPE DHT22
+#define DHTTYPE DHT11
+const int DHTPIN = D6;
 DHT dht(DHTPIN, DHTTYPE);
 
 const char* ssid = "picord";
 const char* password = "000010000";
-const char* server = "http://redweb.magicboy.xyz";  // PHP 伺服器 IP
+const char* server = "redweb.magicboy.xyz";
 
 void setup() {
   Serial.begin(115200);
@@ -31,7 +31,8 @@ void loop() {
   }
 
   WiFiClient client;
-  String url = "/dht_update.php?id=2&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  String url = "/dht_update.php?id=3&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  https://redweb.magicboy.xyz/dht_update.php?action=update&id=3&temperature=25&humidity=25
 
   Serial.print("Requesting URL: ");
   Serial.println(url);
@@ -42,10 +43,10 @@ void loop() {
                  "Connection: close\r\n\r\n");
     delay(500);
 
-    while (client.available()) {
-      String line = client.readStringUntil('\r');
-      Serial.print(line);
-    }
+  while (client.available()) {
+    String line = client.readStringUntil('\n');
+    Serial.println(line);
+  }
     client.stop();
   } else {
     Serial.println("Connection failed!");

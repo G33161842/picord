@@ -1,16 +1,47 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
-const char* ssid = "picord";
-const char* password = "000010000";
+// Wi-Fi 網路清單
+const char* ssid[] = {"daniu0807", "picord"};
+const char* password[] = {"33161842", "000010000"};
+const int wifiNetworks = 2;
 
-//const char* ssid = "daniu0807";
-//const char* password = "33161842";
-
-// 繼電器接的GPIO
+// 繼電器接的 GPIO
 #define RELAY_PIN D5
 
+// Web 伺服器
 ESP8266WebServer server(80);
+
+// 嘗試連接 Wi-Fi 的函數
+void connectWiFi() {
+  while (WiFi.status() != WL_CONNECTED) {
+    for (int i = 0; i < wifiNetworks; i++) {
+      Serial.print("嘗試連接 Wi-Fi: ");
+      Serial.println(ssid[i]);
+      WiFi.begin(ssid[i], password[i]);
+
+      int retries = 0;
+      while (WiFi.status() != WL_CONNECTED && retries < 10) {
+        delay(1000);
+        Serial.print(".");
+        retries++;
+      }
+
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\n連接成功!");
+        Serial.print("已連接到 Wi-Fi: ");
+        Serial.println(ssid[i]);
+        Serial.print("IP 地址: ");
+        Serial.println(WiFi.localIP());
+        return; // 成功連接後退出函數
+      } else {
+        Serial.println("\n連接失敗，嘗試下一個 Wi-Fi...");
+      }
+    }
+    Serial.println("無法連接到任何 Wi-Fi，5 秒後重新嘗試...");
+    delay(5000); // 等待後重試
+  }
+}
 
 // 優化為手機友好的中文控制頁面HTML
 const char webpage[] PROGMEM = R"rawliteral(
@@ -49,19 +80,9 @@ const char webpage[] PROGMEM = R"rawliteral(
 // 初始化Wi-Fi與繼電器
 void setup() {
   Serial.begin(115200);
+  connectWiFi(); // 呼叫連接 Wi-Fi 函數
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW); // 繼電器初始為關閉
-
-  // 連接Wi-Fi
-  WiFi.begin(ssid, password);
-  Serial.print("連接到Wi-Fi中");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("連接成功");
-  Serial.print("IP地址: ");
-  Serial.println(WiFi.localIP());
 
   // 設置HTTP服務
   server.on("/", []() {
@@ -71,11 +92,13 @@ void setup() {
   server.on("/on", []() {
     digitalWrite(RELAY_PIN, HIGH); // 繼電器開啟
     server.send(200, "text/plain", "繼電器已開啟");
+    Serial.println("繼電器已開啟");
   });
 
   server.on("/off", []() {
     digitalWrite(RELAY_PIN, LOW); // 繼電器關閉
     server.send(200, "text/plain", "繼電器已關閉");
+    Serial.println("繼電器已關閉");
   });
 
   server.begin();
@@ -84,5 +107,9 @@ void setup() {
 
 // 主循環
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi 斷開，嘗試重新連接...");
+    connectWiFi(); // 呼叫重新連接函數
+  }
   server.handleClient();
 }
