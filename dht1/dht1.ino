@@ -31,7 +31,8 @@ void loop() {
   }
 
   WiFiClient client;
-  String url = "/dht_update.php?id=3&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  String url = "/dht_update.php?action=update&id=1&temperature=" + String(temperature) + "&humidity=" + String(humidity);
+  //String url = "/dht_update.php?id=3&temperature=" + String(temperature) + "&humidity=" + String(humidity);
   https://redweb.magicboy.xyz/dht_update.php?action=update&id=3&temperature=25&humidity=25
 
   Serial.print("Requesting URL: ");
