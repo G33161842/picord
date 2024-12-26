@@ -72,8 +72,8 @@ void setup() {
     html += "<button class='button button1' onclick=\"sendRequest('on')\">開關暖氣</button>";
     html += "<button class='button button2' onclick=\"sendRequest('down')\">降低溫度</button>";
     html += "<button class='button button3' onclick=\"sendRequest('up')\">提升溫度</button>";
-    html += "<button class='button button4' onclick=\"sendRequest('speed')\">改變速度</button>";
-    html += "<button class='button button5' onclick=\"sendRequest('time')\">設定時間</button>";
+    html += "<button class='button button4' onclick=\"sendRequest('speed')\">改變風速：LL低HH高</button>";
+    html += "<button class='button button5' onclick=\"sendRequest('time')\">定時功能</button>";
 
     html += "<h1>風扇控制</h1>";
     html += "<button class='button button6' onclick=\"sendRequest('relayon')\">開啟風扇</button>";
@@ -108,8 +108,8 @@ void setup() {
   });
   server.on("/speed", HTTP_GET, [](AsyncWebServerRequest *request){
     irsend.sendNEC(0xFF30CF, 32);  // 發送紅外信號改變速度
-    request->send(200, "text/plain", "速度已改變");
-    Serial.println("速度已改變");
+    request->send(200, "text/plain", "風速已改變");
+    Serial.println("風速已改變");
   });
   server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){
     irsend.sendNEC(0xFF7A85, 32);  // 發送紅外信號設置時間
