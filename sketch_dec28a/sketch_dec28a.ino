@@ -9,7 +9,7 @@ const char* password[] = {"33161842", "000010000"};
 const int wifiNetworks = 2;
 
 // 初始化紅外發射器
-IRsend irsend(D5);  // 將 D5 連接到紅外發射器
+IRsend irsend(D4);  // 將 D4 連接到紅外發射器
 #define RELAY_PIN D5
 
 AsyncWebServer server(80);
