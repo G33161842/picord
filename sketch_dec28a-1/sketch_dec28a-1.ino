@@ -2,6 +2,16 @@
 #include <ESPAsyncWebServer.h>
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// 定义 OLED 屏幕的尺寸
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+// 定义 I2C 引脚
+#define OLED_RESET -1  // 可选择使用 -1 连接至 RST
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // 設置您的手機 Wi-Fi 網路名稱和密碼
 const char* ssid[] = {"daniu0807", "picord"};
@@ -19,6 +29,15 @@ void connectWiFi() {
     for (int i = 0; i < wifiNetworks; i++) {
       Serial.print("嘗試連接 WiFi: ");
       Serial.println(ssid[i]);
+      // 更新 OLED 显示内容
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0, 0);
+      display.println("Connecting to Wi-Fi..");
+      //display.println(ssid[i]); // 显示当前尝试的 SSID
+      display.display();
+
       WiFi.begin(ssid[i], password[i]);
 
       int retries = 0;
@@ -34,6 +53,20 @@ void connectWiFi() {
         Serial.println(ssid[i]);
         Serial.print("IP 地址: ");
         Serial.println(WiFi.localIP());
+
+        // 更新 OLED 屏幕显示
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0, 0);
+        display.println("WiFi Connected!");
+        display.println();
+        display.print("SSID:");
+        display.println(ssid[i]);
+        display.println();
+        display.print("IP:");
+        display.println(WiFi.localIP());
+        display.display();
         return; // 成功連接後退出函數
       } else {
         Serial.println("\n連接失敗，嘗試下一個 WiFi...");
@@ -46,12 +79,16 @@ void connectWiFi() {
 
 void setup() {
   Serial.begin(115200);
+  // 初始化 OLED 显示屏
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {  // 使用 I2C 地址 0x3C
+      Serial.println("OLED 显示屏初始化失败!");
+      for (;;); // 如果初始化失败，停止运行
+  }
   irsend.begin();
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW); // 繼電器初始為關閉
   connectWiFi(); // 呼叫連接 WiFi 函數
 
-  // 創建 Web 頁面
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     String html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     html += "<title>暖氣與風扇控制</title>";
@@ -146,10 +183,10 @@ void loop() {
   static unsigned long lastReconnectAttempt = 0;
   if (WiFi.status() != WL_CONNECTED) {
     unsigned long now = millis();
-    if (now - lastReconnectAttempt > 10000) { // 每10秒嘗試重連
+    if (now - lastReconnectAttempt > 10000) { // 每 10 秒尝试重连
       lastReconnectAttempt = now;
       Serial.println("WiFi 斷開，嘗試重新連接...");
-      connectWiFi();
+      connectWiFi(); // 再次尝试连接 Wi-Fi
     }
   }
 }
