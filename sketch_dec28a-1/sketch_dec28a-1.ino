@@ -103,7 +103,8 @@ void setup() {
     html += ".button5 { background-color: #E1D700; } .button5:hover { background-color: #C8B900; }";
     html += ".button6 { background-color: #90EE90; } .button6:hover { background-color: #00FF00; }";
     html += ".button7 { background-color: #FF7F7F; } .button7:hover { background-color: #FF0000; }";
-
+    html += ".button8 { background-color: #90EE90; } .button6:hover { background-color: #00FF00; }";
+    html += ".button9 { background-color: #FF7F7F; } .button7:hover { background-color: #FF0000; }";
     html += "</style></head><body>";
 
     html += "<h1>暖氣控制</h1>";
@@ -118,8 +119,8 @@ void setup() {
     html += "<button class='button button7' onclick=\"sendRequest('relayoff')\">關閉風扇</button>";
 
     html += "<h1>I2511風扇控制</h1>";
-    html += "<button class='button button6' onclick=\"controlFan('on1')\">開啟風扇</button>";
-    html += "<button class='button button7' onclick=\"controlFan('off1')\">關閉風扇</button>";
+    html += "<button class='button button8' onclick=\"sendRequest('on1')\">開啟風扇</button>";
+    html += "<button class='button button9' onclick=\"sendRequest('off1')\">關閉風扇</button>";
 
     html += "<script>";
     html += "function controlFan(action) {";
@@ -174,6 +175,18 @@ void setup() {
     request->send(200, "text/plain", "風扇已關閉");
     Serial.println("風扇已關閉");
   });
+
+  server.on("/on1", HTTP_GET, [](AsyncWebServerRequest *request){
+    irsend.sendSymphony(0xD82, 12);  // 發送紅外信號開啟或關閉暖氣
+    request->send(200, "text/plain", "教室風扇開啟(強中弱)");
+    Serial.println("教室風扇開啟(強中弱)");
+  });
+  server.on("/off1", HTTP_GET, [](AsyncWebServerRequest *request){
+    irsend.sendSymphony(0xD81, 12);  // 發送紅外信號降低溫度
+    request->send(200, "text/plain", "教室風扇關閉");
+    Serial.println("教室風扇關閉");
+  });
+
 
   // 啟動 Web 伺服器
   server.begin();
