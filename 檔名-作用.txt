@@ -1,0 +1,61 @@
+https://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+nodemcu
+
+ESP8266
+
+IRremoteESP8266
+ESP8266WiFi
+ESPAsyncWebServer
+DHT sensor library
+Adafruit SSD1306
+
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <DHT.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <ESPAsyncWebServer.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
+
+daniu 暖氣全功能 繼電器風扇+自動
+DHT_test 手機網頁顯示溫濕度 10秒一次
+daniu_DHT 整合
+
+ESP8266 張永鴻的連接資料庫
+ESP8266DHT1、2、3 放教室三個角落的 偵測溫度然後
+
+nov
+14a測紅外線訊號的
+14b控制暖氣設備的開關
+14b-2控制I2511教室的電風扇 強中弱
+14c esp8266+紅外線發射器+按鈕 暖氣開關
+14d esp8266+紅外線發射器+按鈕 風扇 強中弱
+14d-2 esp8266+紅外線發射器+按鈕 風扇 強中弱+關 兩顆按鈕 
+
+28a ESP8266 連接手機wifi + ip網址可以進入網頁控制風扇開關
+28a-1 改變了網頁 手機網頁介面 按鈕增大 美化
+28a-2 暖氣的開關
+
+dec
+3a ESP8266接紅外線發射器 連接手機wifi + ip網址可以進入網頁控制風扇開關
+5a 新增溫度感測自動開啟功能
+5a-1 ESP8266接溫溼度感測器 網頁顯示溫濕度
+
+12a ESP8266接Adafruit SSD1306 連接Wifi LED顯示目前進度+ESP8266 IP
+
+12a-1 結合5a + 12a的集大成之作 
+12a-2 3個台風扇的開關+自動模式
+12a-3 合併
+
+13a ESP8266 接 繼電器 控制插頭設備 relayon relay 
+
+27a ESP8266 接 紅外線發射器 控制暖氣 5個按鈕
+
+28a ESP8266 接 繼電器 接 紅外線發射器 控制暖氣+風扇 7個按鈕
+28a-1 ESP8266 繼電器 紅外線發射器 暖氣+USB風扇+i2511風扇+Adafruit SSD1306
+
+void ESP8266發射紅外線 控制風扇 手動模式 自動模式
+連接到張永鴻的資料庫 持續連接網路 斷開網路再重新連接一樣會繼續連接網路
