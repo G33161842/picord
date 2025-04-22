@@ -22,8 +22,6 @@ float cachedTemp = 0.0;
 float cachedHumi = 0.0;
 unsigned long lastRead = 0;
 
-// 初始化紅外發射器
-IRsend irsend(D7);  // 將 D7 連接到紅外發射器
 #define RELAY_PIN D5
 
 AsyncWebServer server(80);
@@ -61,7 +59,8 @@ void connectWiFi() {
 void setup() {
   Serial.begin(115200);
   dht.begin();
-  irsend.begin();
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW); // 初始關閉繼電器
   connectWiFi();
 
   server.on("/data", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -86,19 +85,16 @@ void setup() {
 
     html += "<h1>即時溫濕度</h1><div id='data'>載入中...</div>";
 
-    html += "<h1>暖氣控制</h1>";
-    html += "<button class='button button1' onclick=\"sendRequest('on')\">開關暖氣</button>";
-    html += "<button class='button button2' onclick=\"sendRequest('down')\">降低溫度</button>";
-    html += "<button class='button button3' onclick=\"sendRequest('up')\">提升溫度</button>";
-    html += "<button class='button button4' onclick=\"sendRequest('speed')\">改變風速：LL低HH高</button>";
-    html += "<button class='button button5' onclick=\"sendRequest('time')\">定時功能</button>";
+    html += "<h1>風扇控制</h1>";
+    html += "<button class='button button1' onclick=\"sendRequest('on')\">開啟風扇</button>";
+    html += "<button class='button button2' onclick=\"sendRequest('off')\">關閉風扇</button>";
     html += "<button class='button button4' onclick=\"sendRequest('onauto')\">自動模式開啟</button>";
     html += "<button class='button button5' onclick=\"sendRequest('offauto')\">自動模式關閉</button>";
 
     html += "<script>";
     html += "function sendRequest(url) { var xhr = new XMLHttpRequest(); xhr.open('GET', url, true); xhr.send(); }";
     html += "function updateData() { fetch('/data').then(r => r.json()).then(data => {";
-    html += "document.getElementById('data').innerHTML = '目前暖氣溫度：' + data.temp.toFixed(1) + '°C<br>' + '目前濕度：' + data.humi.toFixed(1) + '%';";
+    html += "document.getElementById('data').innerHTML = '目前溫度：' + data.temp.toFixed(1) + '°C<br>' + '目前濕度：' + data.humi.toFixed(1) + '%';";
     html += "}).catch(error => { document.getElementById('data').innerHTML = '資料讀取失敗'; console.error(error); }); }";
     html += "setInterval(updateData, 10000); updateData();";
     html += "</script></body></html>";
@@ -106,18 +102,25 @@ void setup() {
     request->send(200, "text/html", html);
   });
 
-  // 原有紅外與風扇控制 API 都不變
-  server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request){ fan1 = 1; autoMode = 0; irsend.sendNEC(0xFF02FD, 32); request->send(200, "text/plain", "暖氣已開啟或關閉"); });
-  server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request){ fan1 = 0; autoMode = 0; irsend.sendNEC(0xFF02FD, 32); request->send(200, "text/plain", "暖氣已開啟或關閉"); });
-  server.on("/down", HTTP_GET, [](AsyncWebServerRequest *request){ irsend.sendNEC(0xFFE01F, 32); request->send(200, "text/plain", "溫度已降低"); });
-  server.on("/up", HTTP_GET, [](AsyncWebServerRequest *request){ irsend.sendNEC(0xFF906F, 32); request->send(200, "text/plain", "溫度已提升"); });
-  server.on("/speed", HTTP_GET, [](AsyncWebServerRequest *request){ irsend.sendNEC(0xFF30CF, 32); request->send(200, "text/plain", "風速已改變"); });
-  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){ irsend.sendNEC(0xFF7A85, 32); request->send(200, "text/plain", "時間已設置"); });
+  server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request){
+    fan1 = 1; autoMode = 0;
+    digitalWrite(RELAY_PIN, HIGH);
+    request->send(200, "text/plain", "風扇開啟");
+    Serial.println("風扇開啟");
+  });
+  server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request){
+    fan1 = 0; autoMode = 0;
+    digitalWrite(RELAY_PIN, LOW);
+    request->send(200, "text/plain", "風扇關閉");
+    Serial.println("風扇關閉");
+    });
   server.on("/onauto", HTTP_GET, [](AsyncWebServerRequest *request){
-    autoMode = 1; request->send(200, "text/plain", "暖氣自動模式開啟");
+    autoMode = 1; request->send(200, "text/plain", "風扇自動模式開啟");
+    Serial.println("風扇自動模式開啟");
   });
   server.on("/offauto", HTTP_GET, [](AsyncWebServerRequest *request){
-    autoMode = 0; request->send(200, "text/plain", "暖氣自動模式關閉");
+    autoMode = 0; request->send(200, "text/plain", "風扇自動模式關閉");
+    Serial.println("風扇自動模式關閉");
   });
   server.begin();
 }
@@ -136,14 +139,14 @@ void loop() {
   if (autoMode == 1) {
     float temperature = dht.readTemperature();
     if (!isnan(temperature)) {
-      if (temperature >= thresholdTemphigh && fan1 == 1) {//28
-        fan1 = 0;
-        irsend.sendNEC(0xFF02FD, 32);
-        Serial.println("自動模式：溫度過高，暖氣關閉");
-      } else if (temperature < thresholdTemplow && fan1 == 0) {//23
+      if (temperature >= thresholdTemphigh && fan1 == 0) {//28
         fan1 = 1;
-        irsend.sendNEC(0xFF02FD, 32);
-        Serial.println("自動模式：溫度過低，暖氣開啟");
+        digitalWrite(RELAY_PIN, HIGH);
+        Serial.println("自動模式：溫度過高，風扇開啟");
+      } else if (temperature < thresholdTemplow && fan1 == 1) {//23
+        fan1 = 0;
+        digitalWrite(RELAY_PIN, LOW);
+        Serial.println("自動模式：溫度過低，風扇關閉");
       }
     }
   }

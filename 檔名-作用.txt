@@ -20,7 +20,9 @@ Adafruit SSD1306
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 
-daniu_IRLED 暖氣而已
+daniu_IRLED 暖氣+自動模式
+daniu_relay 風扇+自動模式
+
 daniu 暖氣全功能 繼電器風扇+自動
 DHT_test 手機網頁顯示溫濕度 10秒一次
 daniu_DHT 整合
