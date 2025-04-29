@@ -93,6 +93,7 @@ void setup() {
   display.println("Wi-Fi Connected!");
   display.print("IP Address: ");
   display.println(WiFi.localIP());
+  
   display.display();
 
   // Set up web server routes
